@@ -1,30 +1,55 @@
 import { z } from "zod";
 
-export const incidentSchema = z.object({
-  callerName: z.string().default("Unknown caller"),
-  phone: z.string().optional(),
-  address: z.string().default("Address pending"),
-  damageType: z.enum(["water", "fire", "storm", "mold", "biohazard", "unknown"]).default("unknown"),
-  severity: z.enum(["low", "medium", "high", "critical"]).default("high"),
-  affectedAreas: z.array(z.string()).default([]),
-  safetyRisks: z.array(z.string()).default([]),
-  immediateActions: z.array(z.string()).default([]),
-  crewNeeds: z.array(z.string()).default([]),
-  summary: z.string().default("Incident intake in progress."),
+export const damageTypes = ["water", "fire", "storm", "mold", "biohazard", "unknown"] as const;
+export const severities = ["low", "medium", "high", "critical"] as const;
+export const incidentStatuses = ["new", "dispatched", "on_site", "resolved"] as const;
+export const incidentSources = ["web", "phone", "sms", "voice_agent"] as const;
+
+/**
+ * Accept loosely-typed strings for enum-ish fields (an ElevenLabs agent or a
+ * phone IVR rarely returns perfectly normalised values) and coerce them.
+ */
+const coercedEnum = <T extends readonly [string, ...string[]]>(values: T, fallback: T[number]) =>
+  z
+    .string()
+    .optional()
+    .transform((value) => (value ?? "").trim().toLowerCase().replace(/\s+/g, "_"))
+    .pipe(z.enum(values).catch(fallback));
+
+const stringList = z
+  .union([z.array(z.string()), z.string()])
+  .optional()
+  .transform((value) => {
+    if (!value) return [] as string[];
+    const raw = Array.isArray(value) ? value : value.split(/[\n;]+/);
+    return raw.map((item) => item.trim()).filter(Boolean);
+  });
+
+/** Input accepted when creating an incident (tool call, IVR, dashboard, SMS). */
+export const incidentInputSchema = z.object({
+  callerName: z.string().trim().min(1).catch("Unknown caller").default("Unknown caller"),
+  phone: z.string().trim().optional(),
+  address: z.string().trim().min(1).catch("Address pending").default("Address pending"),
+  damageType: coercedEnum(damageTypes, "unknown"),
+  severity: coercedEnum(severities, "high"),
+  affectedAreas: stringList,
+  safetyRisks: stringList,
+  immediateActions: stringList,
+  crewNeeds: stringList,
+  summary: z.string().trim().min(1).catch("Incident intake in progress.").default("Incident intake in progress."),
+  source: coercedEnum(incidentSources, "web"),
 });
 
-export type Incident = z.infer<typeof incidentSchema>;
+export type IncidentInput = z.infer<typeof incidentInputSchema>;
 
-export const demoIncident: Incident = {
-  callerName: "Maya Chen",
-  phone: "(212) 555-0134",
-  address: "221 Canal St, Apt 4B, New York, NY",
-  damageType: "water",
-  severity: "critical",
-  affectedAreas: ["Kitchen ceiling", "Hallway", "Electrical outlet wall"],
-  safetyRisks: ["Standing water near outlets", "Sagging ceiling", "Elderly tenant on site"],
-  immediateActions: ["Shut off water main", "Avoid electrical switches", "Dispatch mitigation crew within 30 minutes"],
-  crewNeeds: ["Water extraction", "Moisture mapping", "Temporary containment", "Photo documentation"],
-  summary:
-    "Burst pipe above apartment 4B with active water intrusion, electrical risk, and vulnerable occupant. Treat as emergency mitigation.",
+/** A persisted incident as returned to the UI. */
+export type Incident = IncidentInput & {
+  id: string;
+  status: (typeof incidentStatuses)[number];
+  createdAt: string;
+  updatedAt: string;
 };
+
+export function severityRank(severity: Incident["severity"]): number {
+  return severities.indexOf(severity);
+}

@@ -17,7 +17,7 @@ export function VoiceConsole() {
   const statusLabel = useMemo(() => {
     if (status === "live") return "Live with ElevenLabs";
     if (status === "connecting") return "Connecting voice agent";
-    if (status === "error") return "Demo fallback active";
+    if (status === "error") return "Voice agent unavailable";
     return "Voice agent standing by";
   }, [status]);
 
@@ -42,11 +42,11 @@ export function VoiceConsole() {
         },
         onDisconnect: () => {
           setStatus("idle");
-          setMessage("Call ended. Review the dispatch packet.");
+          setMessage("Call ended. The incident is now on the board above.");
         },
         onError: () => {
           setStatus("error");
-          setMessage("Unable to reach the voice agent. Use the seeded demo packet.");
+          setMessage("Unable to reach the voice agent. Configure ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID.");
         },
       });
 
@@ -61,7 +61,7 @@ export function VoiceConsole() {
     await conversation?.endSession();
     setConversation(null);
     setStatus("idle");
-    setMessage("Call ended. Review the dispatch packet.");
+    setMessage("Call ended. The incident is now on the board above.");
   }
 
   return (
