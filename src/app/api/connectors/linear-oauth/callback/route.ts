@@ -1,7 +1,19 @@
 import { getEnv, readVar, resolveBaseUrl } from "@/lib/cf";
 import { createConnector } from "@/lib/connectors";
 import { LINEAR_MCP_URL, exchangeCode } from "@/lib/linear-oauth";
+import { mcpCallTool } from "@/lib/mcp-client";
 import { getSessionFromRequest } from "@/lib/require-session";
+
+/** Look up the workspace's first team id so save_issue has a team to create in. */
+async function fetchDefaultTeam(accessToken: string): Promise<string> {
+  try {
+    const result = await mcpCallTool(LINEAR_MCP_URL, { Authorization: `Bearer ${accessToken}` }, "list_teams", {});
+    const parsed = JSON.parse(result.text) as { teams?: Array<{ id?: string }> };
+    return parsed.teams?.[0]?.id ?? "";
+  } catch {
+    return "";
+  }
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,18 +65,20 @@ export async function GET(request: Request) {
       codeVerifier: saved.codeVerifier,
     });
     const expiresAt = new Date(Date.now() + (token.expires_in ?? 3600) * 1000).toISOString();
+    const team = await fetchDefaultTeam(token.access_token);
 
     await createConnector(env, {
       name: "Linear (OAuth)",
       type: "mcp",
       config: {
         url: LINEAR_MCP_URL,
-        toolName: "create_issue",
+        toolName: "save_issue",
         token: token.access_token,
         refreshToken: token.refresh_token ?? "",
         tokenExpiresAt: expiresAt,
         clientId: saved.clientId,
         oauth: "true",
+        ...(team ? { team } : {}),
       },
     });
 

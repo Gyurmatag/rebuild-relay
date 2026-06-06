@@ -292,18 +292,32 @@ async function mcpSync(config: ConnectorConfig, ticket: NormalizedTicket): Promi
   if (!config.toolName) throw new Error("MCP tool name is not configured");
   const headers: Record<string, string> = {};
   if (config.token) headers["Authorization"] = `Bearer ${config.token}`;
-  const result = await mcpCallTool(config.url, headers, config.toolName, {
+
+  const args: Record<string, unknown> = {
     title: ticket.title,
     description: ticket.description,
-    priority: ticket.priority,
-    address: ticket.address,
-    ticketNumber: ticket.ticketNumber,
-  });
-  return {
-    externalId: result.text ? result.text.slice(0, 140) : null,
-    externalUrl: result.text ? firstUrl(result.text) : null,
-    detail: "MCP tool call ok",
+    priority: LINEAR_PRIORITY[ticket.priority],
   };
+  // Linear's save_issue requires a team when creating; pass it when configured.
+  if (config.team) args.team = config.team;
+
+  const result = await mcpCallTool(config.url, headers, config.toolName, args);
+
+  // The result text is often JSON (e.g. Linear returns {id, url}); pull out the
+  // issue identifier and URL when present, otherwise fall back to raw text.
+  let externalId: string | null = null;
+  let externalUrl: string | null = null;
+  try {
+    const parsed = JSON.parse(result.text) as { id?: string; identifier?: string; url?: string };
+    externalId = parsed.identifier ?? parsed.id ?? null;
+    externalUrl = parsed.url ?? null;
+  } catch {
+    // not JSON
+  }
+  if (!externalUrl && result.text) externalUrl = firstUrl(result.text);
+  if (!externalId && result.text) externalId = result.text.slice(0, 120);
+
+  return { externalId, externalUrl, detail: "MCP tool call ok" };
 }
 
 async function linearSync(config: ConnectorConfig, ticket: NormalizedTicket): Promise<SyncResult> {

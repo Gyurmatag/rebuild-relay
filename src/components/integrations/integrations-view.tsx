@@ -311,7 +311,7 @@ function AddConnectorForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                     className="auth-input"
                     value={config.toolName ?? ""}
                     onChange={(e) => set("toolName", e.target.value)}
-                    placeholder="create_issue"
+                    placeholder="save_issue"
                     required
                   />
                 </Field>
@@ -325,9 +325,18 @@ function AddConnectorForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                   />
                 </Field>
               </div>
+              <Field label="Team name or ID (optional — required by Linear save_issue)">
+                <input
+                  className="auth-input"
+                  value={config.team ?? ""}
+                  onChange={(e) => set("team", e.target.value)}
+                  placeholder="e.g. Engineering"
+                />
+              </Field>
               <p className="text-xs text-black/45">
-                Real Linear MCP: use <span className="font-mono">https://mcp.linear.app/mcp</span>, tool{" "}
-                <span className="font-mono">create_issue</span>, and your Linear API key as the bearer token.
+                Easiest path: use the <span className="font-medium">Connect Linear (OAuth)</span> button above. For a
+                manual setup, use <span className="font-mono">https://mcp.linear.app/mcp</span>, tool{" "}
+                <span className="font-mono">save_issue</span>, and a Linear API key as the bearer token.
               </p>
             </>
           ) : null}
