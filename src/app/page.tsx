@@ -1,9 +1,13 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { Headphones, PhoneCall, Radio } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OperationsDashboard } from "@/components/dashboard/operations-dashboard";
+import { UserMenu } from "@/components/auth/user-menu";
 import { VoiceConsole } from "@/components/voice/voice-console";
+import { createAuth } from "@/lib/auth";
 import { getEnv, readVar } from "@/lib/cf";
 import { getDispatchStats, listIncidents, listTicketEvents, type DispatchStats } from "@/lib/db";
 import type { Incident, TicketEvent } from "@/lib/incident-schema";
@@ -11,13 +15,21 @@ import type { Incident, TicketEvent } from "@/lib/incident-schema";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  const env = await getEnv();
+
+  // Gate the operations console behind authentication.
+  const auth = createAuth(env);
+  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
+  if (!session) {
+    redirect("/login");
+  }
+
   let incidents: Incident[] = [];
   let stats: DispatchStats | null = null;
   let events: TicketEvent[] = [];
   let phoneNumber = "";
 
   try {
-    const env = await getEnv();
     phoneNumber = readVar(env, "TWILIO_PHONE_NUMBER") ?? "";
     [incidents, stats, events] = await Promise.all([
       listIncidents(env, 50),
@@ -25,7 +37,7 @@ export default async function Home() {
       listTicketEvents(env, 40),
     ]);
   } catch {
-    // No binding available (e.g. during build) — render an empty board.
+    // Data load failed — render an empty board rather than erroring.
   }
 
   return (
@@ -40,20 +52,18 @@ export default async function Home() {
           <a href="#intake">Voice intake</a>
           <a href="#architecture">Architecture</a>
         </div>
-        {phoneNumber ? (
-          <a
-            href={`tel:${phoneNumber}`}
-            className="inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-black/85"
-          >
-            <PhoneCall className="h-3.5 w-3.5" />
-            {phoneNumber}
-          </a>
-        ) : (
-          <Badge className="gap-2 bg-white/80">
-            <span className="h-2 w-2 rounded-full bg-[#ff7d6e]" />
-            Emergency line pending setup
-          </Badge>
-        )}
+        <div className="flex items-center gap-3">
+          {phoneNumber ? (
+            <a
+              href={`tel:${phoneNumber}`}
+              className="hidden items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-black/85 sm:inline-flex"
+            >
+              <PhoneCall className="h-3.5 w-3.5" />
+              {phoneNumber}
+            </a>
+          ) : null}
+          <UserMenu email={session.user.email} />
+        </div>
       </nav>
 
       <section className="mx-auto mt-16 max-w-7xl">
