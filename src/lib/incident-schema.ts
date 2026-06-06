@@ -94,7 +94,8 @@ export type TicketEventType =
   | "inbound_sms"
   | "inbound_call"
   | "tool_invoked"
-  | "recording";
+  | "recording"
+  | "external_sync";
 
 export type TicketEvent = {
   id: string;

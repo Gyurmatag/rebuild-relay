@@ -1,7 +1,8 @@
 import { getEnv, resolveBaseUrl } from "@/lib/cf";
 import { addTicketEvent, createIncident } from "@/lib/db";
+import { fanOutIncident } from "@/lib/intake";
 import { classifyDamage, classifySeverity } from "@/lib/triage";
-import { dispatchIncident, escapeXml, twimlResponse, verifyTwilioRequest } from "@/lib/twilio";
+import { escapeXml, twimlResponse, verifyTwilioRequest } from "@/lib/twilio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,9 +48,7 @@ export async function POST(request: Request) {
     metadata: { from: fromNumber, callSid: params.CallSid },
   });
 
-  await dispatchIncident(env, incident, baseUrl).catch((error) => {
-    console.error("Voice dispatch failed", error);
-  });
+  await fanOutIncident(env, incident, baseUrl);
 
   const confirmation = escapeXml(
     `Thank you. We have logged a ${incident.severity} ${incident.damageType} emergency and are dispatching a mitigation crew now. If you are in immediate danger, hang up and call 9 1 1. Goodbye.`,

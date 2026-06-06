@@ -15,6 +15,7 @@ const links = [
   { href: "/tickets", label: "Tickets" },
   { href: "/activity", label: "Activity" },
   { href: "/intake", label: "Voice intake" },
+  { href: "/integrations", label: "Integrations" },
 ];
 
 export function AppNav({ email, phone }: { email: string; phone: string }) {

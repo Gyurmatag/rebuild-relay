@@ -10,6 +10,7 @@ import {
   MessageSquare,
   PhoneIncoming,
   Plus,
+  Share2,
   UserPlus,
   Wrench,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const eventIcon: Record<TicketEvent["type"], typeof Wrench> = {
   inbound_call: PhoneIncoming,
   tool_invoked: Wrench,
   recording: FileText,
+  external_sync: Share2,
 };
 
 export function ActivityFeed({

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getEnv, readVar, resolveBaseUrl } from "@/lib/cf";
 import { createIncident } from "@/lib/db";
-import { dispatchIncident } from "@/lib/twilio";
+import { fanOutIncident } from "@/lib/intake";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,16 +39,13 @@ export async function POST(request: Request) {
     return new NextResponse(message, { status: 400 });
   }
 
-  const dispatch = await dispatchIncident(env, incident, resolveBaseUrl(request, env)).catch((error) => ({
-    attempted: true,
-    sent: 0,
-    failures: [{ to: "*", error: error instanceof Error ? error.message : "dispatch failed" }],
-  }));
+  const fanOut = await fanOutIncident(env, incident, resolveBaseUrl(request, env));
 
   return NextResponse.json({
     ok: true,
     incident,
-    dispatch,
+    dispatch: fanOut.dispatch,
+    synced: fanOut.sync,
     dispatchMessage: `${incident.severity.toUpperCase()} ${incident.damageType} loss at ${incident.address}. ${incident.summary}`,
   });
 }

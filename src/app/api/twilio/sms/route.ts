@@ -1,7 +1,8 @@
 import { getEnv, resolveBaseUrl } from "@/lib/cf";
 import { addTicketEvent, createIncident, logNotification } from "@/lib/db";
+import { fanOutIncident } from "@/lib/intake";
 import { classifyDamage, classifySeverity } from "@/lib/triage";
-import { dispatchIncident, escapeXml, twimlResponse, verifyTwilioRequest } from "@/lib/twilio";
+import { escapeXml, twimlResponse, verifyTwilioRequest } from "@/lib/twilio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,9 +59,7 @@ export async function POST(request: Request) {
     metadata: { from: fromNumber },
   });
 
-  await dispatchIncident(env, incident, baseUrl).catch((error) => {
-    console.error("SMS dispatch failed", error);
-  });
+  await fanOutIncident(env, incident, baseUrl);
 
   const reply = escapeXml(
     `RebuildRelay received your ${incident.severity} ${incident.damageType} emergency. A mitigation crew is being dispatched. Reply with the property address if you have not shared it. If you are in danger, call 911.`,

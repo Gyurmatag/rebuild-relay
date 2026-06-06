@@ -1,4 +1,5 @@
 import { resolveBaseUrl } from "@/lib/cf";
+import { listConnectors, syncIncidentToConnectors } from "@/lib/connectors";
 import {
   addNote,
   addTicketEvent,
@@ -10,6 +11,7 @@ import {
   updateIncidentStatus,
 } from "@/lib/db";
 import { damageTypes, severities } from "@/lib/incident-schema";
+import { fanOutIncident } from "@/lib/intake";
 import { dispatchIncident } from "@/lib/twilio";
 
 /**
@@ -102,6 +104,23 @@ export const toolCatalog = [
       required: [],
     },
   },
+  {
+    type: "function",
+    name: "sync_to_ticketing",
+    description:
+      "Push a ticket out to the connected external ticketing systems (the customer's MCP server, API/webhook, or Linear). Tickets sync automatically on creation; use this to re-sync on demand.",
+    parameters: {
+      type: "object",
+      properties: { ticket: { type: "string" } },
+      required: ["ticket"],
+    },
+  },
+  {
+    type: "function",
+    name: "list_ticketing_connectors",
+    description: "List the external ticketing systems currently connected (name, type, and whether enabled).",
+    parameters: { type: "object", properties: {}, required: [] },
+  },
 ] as const;
 
 export type ToolName = (typeof toolCatalog)[number]["name"];
@@ -138,8 +157,18 @@ export async function runTool(
   switch (name) {
     case "create_incident": {
       const incident = await createIncident(env, { ...args, source: "voice_agent" });
-      const dispatch = await dispatchIncident(env, incident, resolveBaseUrl(request, env)).catch(() => null);
-      return { ok: true, tool: name, result: { ticket: incident.ticketNumber, id: incident.id, priority: incident.priority, dispatch } };
+      const fanOut = await fanOutIncident(env, incident, resolveBaseUrl(request, env));
+      return {
+        ok: true,
+        tool: name,
+        result: {
+          ticket: incident.ticketNumber,
+          id: incident.id,
+          priority: incident.priority,
+          dispatch: fanOut.dispatch,
+          synced: fanOut.sync.synced,
+        },
+      };
     }
     case "update_incident": {
       if (!ticketRef) return { ok: false, tool: name, error: "ticket is required" };
@@ -195,6 +224,21 @@ export async function runTool(
       }
       const recent = await listIncidents(env, 5);
       return { ok: true, tool: name, result: recent };
+    }
+    case "sync_to_ticketing": {
+      if (!ticketRef) return { ok: false, tool: name, error: "ticket is required" };
+      const target = await findIncident(env, ticketRef);
+      if (!target) return { ok: false, tool: name, error: `ticket ${ticketRef} not found` };
+      const sync = await syncIncidentToConnectors(env, target);
+      return { ok: true, tool: name, result: { ticket: target.ticketNumber, ...sync } };
+    }
+    case "list_ticketing_connectors": {
+      const connectors = await listConnectors(env);
+      return {
+        ok: true,
+        tool: name,
+        result: connectors.map((c) => ({ name: c.name, type: c.type, enabled: c.enabled, status: c.lastStatus })),
+      };
     }
     default:
       return { ok: false, tool: name, error: `unknown tool: ${name}` };
