@@ -6,6 +6,10 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "rebuild-relay",
 	"main": ".open-next/worker.js",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".open-next/assets"
+	},
 	"compatibility_date": "2026-06-06",
 	"compatibility_flags": [
 		"nodejs_compat",
