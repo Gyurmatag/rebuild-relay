@@ -5,7 +5,7 @@ import { LogOut } from "lucide-react";
 
 import { signOut } from "@/lib/auth-client";
 
-export function UserMenu({ email }: { email: string }) {
+export function UserMenu({ email, hideEmail = false }: { email: string; hideEmail?: boolean }) {
   const [busy, setBusy] = useState(false);
 
   async function handleSignOut() {
@@ -19,7 +19,9 @@ export function UserMenu({ email }: { email: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="hidden max-w-[12rem] truncate text-sm text-black/60 sm:inline">{email}</span>
+      {hideEmail ? null : (
+        <span className="hidden max-w-[12rem] truncate text-sm text-black/60 sm:inline">{email}</span>
+      )}
       <button
         type="button"
         onClick={handleSignOut}
