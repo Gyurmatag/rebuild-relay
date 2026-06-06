@@ -31,6 +31,8 @@ export const statusLabels: Record<Incident["status"], string> = {
 };
 
 export function timeAgo(iso: string, now: number): string {
+  // now === 0 means "not yet mounted" — render nothing to keep SSR/client in sync.
+  if (!now) return "";
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return "";
   const diff = Math.max(0, now - then);
@@ -45,6 +47,7 @@ export function timeAgo(iso: string, now: number): string {
 }
 
 export function slaLabel(incident: Incident, now: number): { text: string; overdue: boolean } | null {
+  if (!now) return null;
   if (!incident.slaDueAt || incident.status === "resolved" || incident.status === "closed") return null;
   const due = new Date(incident.slaDueAt).getTime();
   if (Number.isNaN(due)) return null;

@@ -47,10 +47,13 @@ export function RealtimeProvider({
   const [stats, setStats] = useState<Stats | null>(initialStats);
   const [events, setEvents] = useState<TicketEvent[]>(initialEvents);
   const [connected, setConnected] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
+  // Starts at 0 so server render and client hydration agree (relative-time
+  // strings render empty until mounted), avoiding hydration mismatches.
+  const [now, setNow] = useState(0);
   const seen = useRef<Set<string>>(new Set(initialEvents.map((e) => e.id)));
 
   useEffect(() => {
+    setNow(Date.now());
     const clock = setInterval(() => setNow(Date.now()), 10000);
     return () => clearInterval(clock);
   }, []);
