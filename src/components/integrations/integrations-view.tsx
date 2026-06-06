@@ -99,25 +99,6 @@ export function IntegrationsView() {
     }
   }
 
-  const [addingDemo, setAddingDemo] = useState(false);
-  async function addLinearDemo() {
-    setAddingDemo(true);
-    try {
-      await fetch("/api/connectors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Linear (MCP demo)",
-          type: "mcp",
-          config: { url: `${window.location.origin}/api/mcp/linear-demo`, toolName: "create_issue" },
-        }),
-      });
-      await load();
-    } finally {
-      setAddingDemo(false);
-    }
-  }
-
   return (
     <div className="space-y-5">
       {banner ? (
@@ -144,10 +125,6 @@ export function IntegrationsView() {
             <Plug className="h-3.5 w-3.5" />
             Connect Linear (OAuth)
           </a>
-          <Button variant="outline" onClick={addLinearDemo} disabled={addingDemo} className="gap-2">
-            {addingDemo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plug className="h-4 w-4" />}
-            Linear MCP demo
-          </Button>
           <Button onClick={() => setShowForm((v) => !v)} className="gap-2">
             <Plus className="h-4 w-4" />
             Add connector
