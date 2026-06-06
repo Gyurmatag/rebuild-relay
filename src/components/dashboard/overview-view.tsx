@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Radio } from "lucide-react";
+import { ArrowUpRight, ListChecks, Plug, Radio } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
@@ -46,19 +46,40 @@ export function OverviewView() {
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </CardHeader>
-        <CardContent className="grid gap-3 text-sm text-black/65 sm:grid-cols-3">
-          <div className="rounded-2xl bg-[#f8f5ef] p-4">
-            <p className="font-medium text-black">Phone &amp; SMS — Twilio</p>
-            <p className="mt-1">Signature-verified webhooks triage and open tickets automatically.</p>
-          </div>
-          <div className="rounded-2xl bg-[#f8f5ef] p-4">
-            <p className="font-medium text-black">Web voice — ElevenLabs</p>
-            <p className="mt-1">Agent tool-calls drive the ticketing system in real time.</p>
-          </div>
-          <div className="rounded-2xl bg-[#f8f5ef] p-4">
-            <p className="font-medium text-black">Cloudflare-native</p>
-            <p className="mt-1">D1 stores every ticket and event; updates stream over SSE.</p>
-          </div>
+        <CardContent className="grid gap-3 sm:grid-cols-3">
+          <Link
+            href="/tickets"
+            className="group rounded-2xl border border-black/10 bg-[#f8f5ef] p-4 transition hover:border-black/25"
+          >
+            <ListChecks className="h-5 w-5" />
+            <p className="mt-3 flex items-center gap-1 font-medium text-black">
+              Work the queue
+              <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition group-hover:opacity-100" />
+            </p>
+            <p className="mt-1 text-sm text-black/55">Triage, assign, and resolve open tickets.</p>
+          </Link>
+          <Link
+            href="/activity"
+            className="group rounded-2xl border border-black/10 bg-[#f8f5ef] p-4 transition hover:border-black/25"
+          >
+            <Radio className="h-5 w-5" />
+            <p className="mt-3 flex items-center gap-1 font-medium text-black">
+              Live activity
+              <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition group-hover:opacity-100" />
+            </p>
+            <p className="mt-1 text-sm text-black/55">Follow every dispatch and update as it happens.</p>
+          </Link>
+          <Link
+            href="/integrations"
+            className="group rounded-2xl border border-black/10 bg-[#f8f5ef] p-4 transition hover:border-black/25"
+          >
+            <Plug className="h-5 w-5" />
+            <p className="mt-3 flex items-center gap-1 font-medium text-black">
+              Integrations
+              <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition group-hover:opacity-100" />
+            </p>
+            <p className="mt-1 text-sm text-black/55">Sync tickets to your existing ticketing system.</p>
+          </Link>
         </CardContent>
       </Card>
     </div>
