@@ -1,5 +1,5 @@
 import { getEnv, resolveBaseUrl } from "@/lib/cf";
-import { createIncident, logNotification } from "@/lib/db";
+import { addTicketEvent, createIncident, logNotification } from "@/lib/db";
 import { classifyDamage, classifySeverity } from "@/lib/triage";
 import { dispatchIncident, escapeXml, twimlResponse, verifyTwilioRequest } from "@/lib/twilio";
 
@@ -48,6 +48,14 @@ export async function POST(request: Request) {
     body,
     twilioSid: params.MessageSid ?? null,
     status: "received",
+  });
+
+  await addTicketEvent(env, {
+    ticketId: incident.id,
+    type: "inbound_sms",
+    actor: "caller",
+    message: `Inbound SMS from ${fromNumber ?? "unknown"}: "${body.slice(0, 120)}"`,
+    metadata: { from: fromNumber },
   });
 
   await dispatchIncident(env, incident, baseUrl).catch((error) => {

@@ -5,20 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OperationsDashboard } from "@/components/dashboard/operations-dashboard";
 import { VoiceConsole } from "@/components/voice/voice-console";
 import { getEnv, readVar } from "@/lib/cf";
-import { getDispatchStats, listIncidents, type DispatchStats } from "@/lib/db";
-import type { Incident } from "@/lib/incident-schema";
+import { getDispatchStats, listIncidents, listTicketEvents, type DispatchStats } from "@/lib/db";
+import type { Incident, TicketEvent } from "@/lib/incident-schema";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   let incidents: Incident[] = [];
   let stats: DispatchStats | null = null;
+  let events: TicketEvent[] = [];
   let phoneNumber = "";
 
   try {
     const env = await getEnv();
     phoneNumber = readVar(env, "TWILIO_PHONE_NUMBER") ?? "";
-    [incidents, stats] = await Promise.all([listIncidents(env, 50), getDispatchStats(env)]);
+    [incidents, stats, events] = await Promise.all([
+      listIncidents(env, 50),
+      getDispatchStats(env),
+      listTicketEvents(env, 40),
+    ]);
   } catch {
     // No binding available (e.g. during build) — render an empty board.
   }
@@ -66,7 +71,12 @@ export default async function Home() {
       </section>
 
       <section id="board" className="mx-auto mt-10 max-w-7xl">
-        <OperationsDashboard initialIncidents={incidents} initialStats={stats} phoneNumber={phoneNumber} />
+        <OperationsDashboard
+          initialIncidents={incidents}
+          initialStats={stats}
+          initialEvents={events}
+          phoneNumber={phoneNumber}
+        />
       </section>
 
       <section id="intake" className="mx-auto mt-5 grid max-w-7xl gap-5 lg:grid-cols-[1fr_0.9fr]">

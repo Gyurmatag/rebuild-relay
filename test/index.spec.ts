@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { incidentInputSchema } from "../src/lib/incident-schema";
+import { incidentInputSchema, severityToPriority, slaMinutes } from "../src/lib/incident-schema";
 import { classifyDamage, classifySeverity } from "../src/lib/triage";
 import { validateTwilioFormSignature } from "../src/lib/twilio-sign";
 
@@ -26,6 +26,21 @@ describe("incidentInputSchema", () => {
     const parsed = incidentInputSchema.parse({ damageType: "asteroid", severity: "spicy" });
     expect(parsed.damageType).toBe("unknown");
     expect(parsed.severity).toBe("high");
+  });
+});
+
+describe("ticketing", () => {
+  it("maps severity to a support priority", () => {
+    expect(severityToPriority("critical")).toBe("P1");
+    expect(severityToPriority("high")).toBe("P2");
+    expect(severityToPriority("medium")).toBe("P3");
+    expect(severityToPriority("low")).toBe("P4");
+  });
+
+  it("defines a tightening SLA window as priority rises", () => {
+    expect(slaMinutes.P1).toBeLessThan(slaMinutes.P2);
+    expect(slaMinutes.P2).toBeLessThan(slaMinutes.P3);
+    expect(slaMinutes.P3).toBeLessThan(slaMinutes.P4);
   });
 });
 

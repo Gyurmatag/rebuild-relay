@@ -2,8 +2,33 @@ import { z } from "zod";
 
 export const damageTypes = ["water", "fire", "storm", "mold", "biohazard", "unknown"] as const;
 export const severities = ["low", "medium", "high", "critical"] as const;
-export const incidentStatuses = ["new", "dispatched", "on_site", "resolved"] as const;
+export const incidentStatuses = ["new", "triage", "dispatched", "on_site", "resolved", "closed"] as const;
 export const incidentSources = ["web", "phone", "sms", "voice_agent"] as const;
+export const priorities = ["P1", "P2", "P3", "P4"] as const;
+
+export type Priority = (typeof priorities)[number];
+
+/** Map a severity onto a support-style priority. */
+export function severityToPriority(severity: (typeof severities)[number]): Priority {
+  switch (severity) {
+    case "critical":
+      return "P1";
+    case "high":
+      return "P2";
+    case "medium":
+      return "P3";
+    default:
+      return "P4";
+  }
+}
+
+/** SLA response window per priority, in minutes. */
+export const slaMinutes: Record<Priority, number> = {
+  P1: 30,
+  P2: 120,
+  P3: 480,
+  P4: 1440,
+};
 
 /**
  * Accept loosely-typed strings for enum-ish fields (an ElevenLabs agent or a
@@ -42,10 +67,14 @@ export const incidentInputSchema = z.object({
 
 export type IncidentInput = z.infer<typeof incidentInputSchema>;
 
-/** A persisted incident as returned to the UI. */
+/** A persisted incident / ticket as returned to the UI. */
 export type Incident = IncidentInput & {
   id: string;
+  ticketNumber: string;
   status: (typeof incidentStatuses)[number];
+  priority: Priority;
+  assignee?: string | null;
+  slaDueAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -53,3 +82,26 @@ export type Incident = IncidentInput & {
 export function severityRank(severity: Incident["severity"]): number {
   return severities.indexOf(severity);
 }
+
+/** A single entry in the ticket audit trail / activity feed. */
+export type TicketEventType =
+  | "created"
+  | "status_changed"
+  | "priority_changed"
+  | "assigned"
+  | "note"
+  | "dispatch"
+  | "inbound_sms"
+  | "inbound_call"
+  | "tool_invoked"
+  | "recording";
+
+export type TicketEvent = {
+  id: string;
+  createdAt: string;
+  ticketId: string | null;
+  type: TicketEventType;
+  actor: string;
+  message: string;
+  metadata?: Record<string, unknown> | null;
+};

@@ -1,5 +1,5 @@
 import { getEnv, resolveBaseUrl } from "@/lib/cf";
-import { createIncident } from "@/lib/db";
+import { addTicketEvent, createIncident } from "@/lib/db";
 import { classifyDamage, classifySeverity } from "@/lib/triage";
 import { dispatchIncident, escapeXml, twimlResponse, verifyTwilioRequest } from "@/lib/twilio";
 
@@ -37,6 +37,14 @@ export async function POST(request: Request) {
     severity: classifySeverity(speech),
     summary: speech,
     source: "phone",
+  });
+
+  await addTicketEvent(env, {
+    ticketId: incident.id,
+    type: "inbound_call",
+    actor: "caller",
+    message: `Inbound call from ${fromNumber ?? "unknown"}: "${speech.slice(0, 120)}"`,
+    metadata: { from: fromNumber, callSid: params.CallSid },
   });
 
   await dispatchIncident(env, incident, baseUrl).catch((error) => {

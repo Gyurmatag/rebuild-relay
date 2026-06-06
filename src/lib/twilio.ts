@@ -1,5 +1,5 @@
 import { readVar } from "@/lib/cf";
-import { logNotification, updateNotificationStatusBySid } from "@/lib/db";
+import { addTicketEvent, logNotification, updateNotificationStatusBySid } from "@/lib/db";
 import type { Incident } from "@/lib/incident-schema";
 import { escapeXml, validateTwilioFormSignature } from "@/lib/twilio-sign";
 
@@ -224,6 +224,13 @@ export async function dispatchIncident(
 ): Promise<DispatchOutcome> {
   const config = getTwilioConfig(env);
   if (!config || config.dispatchNumbers.length === 0) {
+    await addTicketEvent(env, {
+      ticketId: incident.id,
+      type: "dispatch",
+      actor: "system",
+      message: `Crew dispatch queued for ${incident.ticketNumber} (no Twilio sender configured — alert simulated)`,
+      metadata: { simulated: true },
+    });
     return { attempted: false, sent: 0, failures: [] };
   }
 
@@ -260,6 +267,16 @@ export async function dispatchIncident(
       });
     }
   }
+
+  await addTicketEvent(env, {
+    ticketId: incident.id,
+    type: "dispatch",
+    actor: "system",
+    message: `Crew alert sent for ${incident.ticketNumber} to ${sent} responder${sent === 1 ? "" : "s"}${
+      failures.length ? ` (${failures.length} failed)` : ""
+    }`,
+    metadata: { sent, failed: failures.length },
+  });
 
   // Reassure the caller (only for inbound/known numbers) that help is coming.
   if (incident.phone && incident.source !== "sms") {
