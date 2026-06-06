@@ -1,6 +1,6 @@
 import { getEnv } from "@/lib/cf";
 import { saveRecording } from "@/lib/db";
-import { getTwilioConfig, verifyTwilioRequest } from "@/lib/twilio";
+import { getTwilioConfig, twilioAuthHeader, verifyTwilioRequest } from "@/lib/twilio";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   if (recordingUrl && bucket && config) {
     try {
       const audioResponse = await fetch(`${recordingUrl}.mp3`, {
-        headers: { Authorization: `Basic ${btoa(`${config.accountSid}:${config.authToken}`)}` },
+        headers: { Authorization: twilioAuthHeader(config) },
       });
       if (audioResponse.ok) {
         r2Key = `recordings/${recordingSid}.mp3`;

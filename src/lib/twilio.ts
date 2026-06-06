@@ -7,7 +7,11 @@ export { escapeXml, validateTwilioFormSignature };
 
 export type TwilioConfig = {
   accountSid: string;
-  authToken: string;
+  /** Account Auth Token — required for inbound webhook signature validation. */
+  authToken?: string;
+  /** API Key SID (SK…) + Secret — preferred, revocable credential for REST. */
+  apiKeySid?: string;
+  apiKeySecret?: string;
   /** Either a phone number or a Messaging Service is required to send. */
   fromNumber?: string;
   messagingServiceSid?: string;
@@ -18,11 +22,18 @@ export type TwilioConfig = {
 export function getTwilioConfig(env: CloudflareEnv): TwilioConfig | null {
   const accountSid = readVar(env, "TWILIO_ACCOUNT_SID");
   const authToken = readVar(env, "TWILIO_AUTH_TOKEN");
-  if (!accountSid || !authToken) return null;
+  const apiKeySid = readVar(env, "TWILIO_API_KEY_SID");
+  const apiKeySecret = readVar(env, "TWILIO_API_KEY_SECRET");
+
+  // REST auth needs the Account SID plus either an API key pair or the token.
+  const hasRestAuth = Boolean(authToken) || Boolean(apiKeySid && apiKeySecret);
+  if (!accountSid || !hasRestAuth) return null;
 
   return {
     accountSid,
     authToken,
+    apiKeySid,
+    apiKeySecret,
     fromNumber: readVar(env, "TWILIO_PHONE_NUMBER"),
     messagingServiceSid: readVar(env, "TWILIO_MESSAGING_SERVICE_SID"),
     dispatchNumbers: (readVar(env, "DISPATCH_NUMBERS") ?? "")
@@ -34,8 +45,18 @@ export function getTwilioConfig(env: CloudflareEnv): TwilioConfig | null {
 
 const TWILIO_API_BASE = "https://api.twilio.com/2010-04-01";
 
+/**
+ * HTTP Basic header for REST calls. Prefers the API key (SK:secret) — the
+ * recommended, revocable credential — and falls back to Account SID:Auth Token.
+ */
+export function twilioAuthHeader(config: TwilioConfig): string {
+  const user = config.apiKeySid && config.apiKeySecret ? config.apiKeySid : config.accountSid;
+  const pass = config.apiKeySid && config.apiKeySecret ? config.apiKeySecret : (config.authToken ?? "");
+  return `Basic ${btoa(`${user}:${pass}`)}`;
+}
+
 function authHeader(config: TwilioConfig): string {
-  return `Basic ${btoa(`${config.accountSid}:${config.authToken}`)}`;
+  return twilioAuthHeader(config);
 }
 
 export type SendSmsResult = {
