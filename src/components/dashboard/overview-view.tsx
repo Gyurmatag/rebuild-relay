@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Radio } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { StatCards } from "@/components/dashboard/stat-cards";
@@ -13,10 +12,6 @@ export function OverviewView() {
   return (
     <div className="space-y-6">
       <section>
-        <Badge className="mb-5 gap-2 bg-white/80">
-          <span className="h-2 w-2 rounded-full bg-[#ff7d6e]" />
-          ElevenLabs voice AI + Twilio for restoration teams
-        </Badge>
         <h1 className="max-w-3xl text-4xl font-medium leading-[0.98] tracking-[-0.04em] text-black sm:text-5xl">
           Operations console
         </h1>
