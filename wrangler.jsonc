@@ -30,11 +30,14 @@
 		}
 	],
 	/**
-	 * Non-secret configuration. Set the real values here (or override per
-	 * environment). Sensitive credentials are stored as secrets, not vars:
+	 * Non-secret configuration. Personal data (the Twilio number and the
+	 * on-call dispatch numbers) is kept out of this committed file and set as
+	 * secrets instead, so it never lands in the public repo:
 	 *
 	 *   npx wrangler secret put TWILIO_ACCOUNT_SID
 	 *   npx wrangler secret put TWILIO_AUTH_TOKEN
+	 *   npx wrangler secret put TWILIO_PHONE_NUMBER     # e.g. +16107535508
+	 *   npx wrangler secret put DISPATCH_NUMBERS        # comma-separated on-call numbers
 	 *   npx wrangler secret put ELEVENLABS_API_KEY
 	 *   npx wrangler secret put ELEVENLABS_AGENT_ID
 	 *   npx wrangler secret put DISPATCH_API_KEY        # optional: protect the tool endpoint
@@ -43,9 +46,7 @@
 	 * and its messaging webhook at                /api/twilio/sms
 	 */
 	"vars": {
-		"TWILIO_PHONE_NUMBER": "",
 		"TWILIO_MESSAGING_SERVICE_SID": "",
-		"DISPATCH_NUMBERS": "",
-		"PUBLIC_BASE_URL": ""
+		"PUBLIC_BASE_URL": "https://rebuild-relay.cfi-ops.workers.dev"
 	}
 }
