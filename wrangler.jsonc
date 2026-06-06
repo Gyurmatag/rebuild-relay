@@ -5,20 +5,30 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "rebuild-relay",
-	"main": "src/index.ts",
+	"main": ".open-next/worker.js",
 	"compatibility_date": "2026-06-06",
 	"compatibility_flags": [
 		"nodejs_compat",
 		"global_fetch_strictly_public"
 	],
-	"assets": {
-		// The path to the directory containing the `index.html` file to be served at `/`
-		"directory": "./public"
-	},
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "rebuild-relay",
+			"database_id": "c5a5abeb-aea5-4cde-8921-3f2fa86a6b62",
+			"migrations_dir": "./migrations"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "AUDIO_BUCKET",
+			"bucket_name": "rebuild-relay-audio"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
