@@ -162,19 +162,21 @@ export function OperationsDashboard({
 
   return (
     <div className="space-y-5">
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {statCards.map((card) => (
           <Card key={card.label}>
-            <CardContent className="pt-6">
-              <p className="text-sm text-black/55">{card.label}</p>
-              <p className={`mt-2 text-4xl font-semibold tracking-tight ${card.accent}`}>{card.value}</p>
+            <CardContent className="p-4 sm:p-6 sm:pt-6">
+              <p className="text-xs text-black/55 sm:text-sm">{card.label}</p>
+              <p className={`mt-1 text-3xl font-semibold tracking-tight sm:mt-2 sm:text-4xl ${card.accent}`}>
+                {card.value}
+              </p>
             </CardContent>
           </Card>
         ))}
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
-        <Card>
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.55fr_1fr]">
+        <Card className="min-w-0">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle>Ticket queue</CardTitle>
@@ -255,7 +257,7 @@ export function OperationsDashboard({
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col">
+        <Card className="flex min-w-0 flex-col">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle>Live activity</CardTitle>
             <LiveBadge connected={connected} />

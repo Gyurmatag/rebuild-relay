@@ -79,8 +79,8 @@ export default async function Home() {
         />
       </section>
 
-      <section id="intake" className="mx-auto mt-5 grid max-w-7xl gap-5 lg:grid-cols-[1fr_0.9fr]">
-        <Card>
+      <section id="intake" className="mx-auto mt-5 grid max-w-7xl grid-cols-1 gap-5 lg:grid-cols-[1fr_0.9fr]">
+        <Card className="min-w-0">
           <CardHeader>
             <CardTitle>Live ElevenLabs intake</CardTitle>
             <p className="text-sm leading-6 text-black/60">
@@ -93,7 +93,7 @@ export default async function Home() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden">
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader>
             <Radio className="h-5 w-5" />
             <CardTitle>One pipeline, three channels</CardTitle>
@@ -121,7 +121,7 @@ export default async function Home() {
       </section>
 
       <section id="architecture" className="mx-auto my-5 max-w-7xl rounded-[2rem] border border-black/10 bg-white/70 p-6">
-        <div className="grid gap-5 text-sm text-black/65 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-5 text-sm text-black/65 sm:grid-cols-2 md:grid-cols-4">
           <p>
             <strong className="block text-black">Voice + telephony</strong>ElevenLabs handles web voice; Twilio carries
             real phone calls and SMS.
