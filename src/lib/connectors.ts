@@ -1,5 +1,6 @@
 import { addTicketEvent } from "@/lib/db";
 import type { Incident, Priority } from "@/lib/incident-schema";
+import { refreshAccessToken } from "@/lib/linear-oauth";
 import { mcpCallTool, mcpListTools } from "@/lib/mcp-client";
 
 export const connectorTypes = ["webhook", "mcp", "linear"] as const;
@@ -20,7 +21,7 @@ export type Connector = {
 };
 
 /** Config keys treated as secrets — never returned to the client. */
-const SECRET_KEYS = new Set(["token", "apiKey", "secret", "authorization"]);
+const SECRET_KEYS = new Set(["token", "apiKey", "secret", "authorization", "refreshToken"]);
 
 type ConnectorRow = {
   id: string;
@@ -119,6 +120,36 @@ async function setConnectorStatus(
     .prepare(`UPDATE connectors SET last_status = ?, last_detail = ?, last_checked_at = ? WHERE id = ?`)
     .bind(status, detail.slice(0, 300), new Date().toISOString(), id)
     .run();
+}
+
+/**
+ * For OAuth-backed MCP connectors, refresh the access token if it is missing or
+ * within a minute of expiry, persisting the new token. Returns a connector with
+ * a valid bearer token in `config.token`.
+ */
+async function ensureFreshToken(env: CloudflareEnv, connector: Connector): Promise<Connector> {
+  if (connector.type !== "mcp" || connector.config.oauth !== "true") return connector;
+
+  const expiresAt = connector.config.tokenExpiresAt ? Date.parse(connector.config.tokenExpiresAt) : 0;
+  const stillValid = expiresAt && expiresAt - Date.now() > 60_000;
+  if (stillValid) return connector;
+
+  const refreshToken = connector.config.refreshToken;
+  const clientId = connector.config.clientId;
+  if (!refreshToken || !clientId) return connector; // nothing to refresh with
+
+  const token = await refreshAccessToken({ refreshToken, clientId });
+  const config: ConnectorConfig = {
+    ...connector.config,
+    token: token.access_token,
+    refreshToken: token.refresh_token ?? refreshToken,
+    tokenExpiresAt: new Date(Date.now() + (token.expires_in ?? 3600) * 1000).toISOString(),
+  };
+  await getDb(env)
+    .prepare(`UPDATE connectors SET config = ?, updated_at = ? WHERE id = ?`)
+    .bind(JSON.stringify(config), new Date().toISOString(), connector.id)
+    .run();
+  return { ...connector, config };
 }
 
 async function addTicketLink(
@@ -323,8 +354,12 @@ async function runSync(connector: Connector, ticket: NormalizedTicket): Promise<
 /* Public: test + sync                                                        */
 /* -------------------------------------------------------------------------- */
 
-export async function testConnector(env: CloudflareEnv, connector: Connector): Promise<{ ok: boolean; detail: string }> {
+export async function testConnector(
+  env: CloudflareEnv,
+  baseConnector: Connector,
+): Promise<{ ok: boolean; detail: string }> {
   try {
+    const connector = await ensureFreshToken(env, baseConnector);
     let detail = "Connection ok";
     if (connector.type === "mcp") {
       if (!connector.config.url) throw new Error("MCP server URL is not configured");
@@ -361,11 +396,11 @@ export async function testConnector(env: CloudflareEnv, connector: Connector): P
       if (!res.ok) throw new Error(`Webhook responded ${res.status}`);
       detail = `HTTP ${res.status}`;
     }
-    await setConnectorStatus(env, connector.id, "ok", detail);
+    await setConnectorStatus(env, baseConnector.id, "ok", detail);
     return { ok: true, detail };
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Test failed";
-    await setConnectorStatus(env, connector.id, "error", detail);
+    await setConnectorStatus(env, baseConnector.id, "error", detail);
     return { ok: false, detail };
   }
 }
@@ -381,8 +416,10 @@ export async function syncIncidentToConnectors(env: CloudflareEnv, incident: Inc
   let synced = 0;
   let failed = 0;
 
-  for (const connector of connectors) {
+  for (const baseConnector of connectors) {
+    let connector = baseConnector;
     try {
+      connector = await ensureFreshToken(env, baseConnector);
       const out = await runSync(connector, ticket);
       synced += 1;
       await addTicketLink(env, {

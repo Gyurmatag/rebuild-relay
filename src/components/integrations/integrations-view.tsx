@@ -36,6 +36,19 @@ export function IntegrationsView() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<Record<string, { ok: boolean; detail: string }>>({});
   const [showForm, setShowForm] = useState(false);
+  const [banner, setBanner] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("connected") === "linear") {
+      setBanner({ kind: "ok", text: "Linear connected over OAuth — incidents will now sync to your Linear workspace." });
+    } else if (params.get("error")) {
+      setBanner({ kind: "error", text: `Linear connection failed: ${params.get("error")}` });
+    }
+    if (params.has("connected") || params.has("error")) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/connectors", { cache: "no-store" });
@@ -107,14 +120,33 @@ export function IntegrationsView() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      {banner ? (
+        <div
+          className={`rounded-2xl border px-4 py-3 text-sm ${
+            banner.kind === "ok"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {banner.text}
+        </div>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-black/55">
           {connectors.length} connector{connectors.length === 1 ? "" : "s"} configured
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="/api/connectors/linear-oauth/start"
+            className="inline-flex h-9 items-center gap-2 rounded-full bg-[#5e6ad2] px-4 text-xs font-medium text-white shadow-sm hover:bg-[#4f5ac0]"
+          >
+            <Plug className="h-3.5 w-3.5" />
+            Connect Linear (OAuth)
+          </a>
           <Button variant="outline" onClick={addLinearDemo} disabled={addingDemo} className="gap-2">
             {addingDemo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plug className="h-4 w-4" />}
-            Add Linear (MCP demo)
+            Linear MCP demo
           </Button>
           <Button onClick={() => setShowForm((v) => !v)} className="gap-2">
             <Plus className="h-4 w-4" />
