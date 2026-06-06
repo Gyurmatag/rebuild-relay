@@ -86,16 +86,41 @@ export function IntegrationsView() {
     }
   }
 
+  const [addingDemo, setAddingDemo] = useState(false);
+  async function addLinearDemo() {
+    setAddingDemo(true);
+    try {
+      await fetch("/api/connectors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Linear (MCP demo)",
+          type: "mcp",
+          config: { url: `${window.location.origin}/api/mcp/linear-demo`, toolName: "create_issue" },
+        }),
+      });
+      await load();
+    } finally {
+      setAddingDemo(false);
+    }
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <p className="text-sm text-black/55">
           {connectors.length} connector{connectors.length === 1 ? "" : "s"} configured
         </p>
-        <Button onClick={() => setShowForm((v) => !v)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add connector
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={addLinearDemo} disabled={addingDemo} className="gap-2">
+            {addingDemo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plug className="h-4 w-4" />}
+            Add Linear (MCP demo)
+          </Button>
+          <Button onClick={() => setShowForm((v) => !v)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add connector
+          </Button>
+        </div>
       </div>
 
       {showForm ? (
@@ -291,6 +316,10 @@ function AddConnectorForm({ onCreated, onCancel }: { onCreated: () => void; onCa
                   />
                 </Field>
               </div>
+              <p className="text-xs text-black/45">
+                Real Linear MCP: use <span className="font-mono">https://mcp.linear.app/mcp</span>, tool{" "}
+                <span className="font-mono">create_issue</span>, and your Linear API key as the bearer token.
+              </p>
             </>
           ) : null}
 

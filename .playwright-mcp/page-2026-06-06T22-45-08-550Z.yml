@@ -1,0 +1,59 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - navigation [ref=e5]:
+      - link "RebuildRelay" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - text: RebuildRelay
+      - generic [ref=e8]:
+        - link "Overview" [ref=e9] [cursor=pointer]:
+          - /url: /
+        - link "Tickets" [ref=e10] [cursor=pointer]:
+          - /url: /tickets
+        - link "Activity" [ref=e11] [cursor=pointer]:
+          - /url: /activity
+        - link "Voice intake" [ref=e12] [cursor=pointer]:
+          - /url: /intake
+        - link "Integrations" [ref=e13] [cursor=pointer]:
+          - /url: /integrations
+      - generic [ref=e14]:
+        - generic [ref=e15]: Live
+        - link "+16107535508" [ref=e18] [cursor=pointer]:
+          - /url: tel:+16107535508
+          - img [ref=e19]
+          - text: "+16107535508"
+        - generic [ref=e23]:
+          - generic [ref=e24]: demo@rebuild.work
+          - button "Sign out" [ref=e25]:
+            - img [ref=e26]
+            - text: Sign out
+    - main [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - heading "Integrations" [level=1] [ref=e32]
+          - paragraph [ref=e33]: Connect your existing ticketing system. Every incident Rebuild Relay opens is pushed out automatically — via a remote MCP server, a generic API / webhook, or Linear.
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - paragraph [ref=e36]: 1 connector configured
+            - generic [ref=e37]:
+              - button "Add Linear (MCP demo)" [ref=e38]:
+                - img [ref=e48]
+                - text: Add Linear (MCP demo)
+              - button "Add connector" [ref=e41]:
+                - img [ref=e42]
+                - text: Add connector
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - generic [ref=e54]:
+                - generic [ref=e55]: Linear (MCP demo)
+                - generic [ref=e56]: MCP server
+                - generic [ref=e57]: Enabled
+              - paragraph [ref=e58]: https://rebuild-relay.cfi-ops.workers.dev/api/mcp/linear-demo · create_issue
+              - paragraph [ref=e81]:
+                - img [ref=e82]
+                - text: 2 tool(s) available
+            - generic [ref=e59]:
+              - button "Test" [ref=e60]
+              - button "Disable" [ref=e61]
+              - button "Delete connector" [ref=e62]:
+                - img [ref=e63]
+  - alert [ref=e46]
